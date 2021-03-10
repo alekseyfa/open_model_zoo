@@ -95,6 +95,7 @@ from .sound_classification_converter import SoundClassificationFormatConverter
 from .ade20k_image_translation import ADE20kImageTranslationConverter
 from .salient_object_detection import SalientObjectDetectionConverter
 from .common_object_detection import CommonDetectionConverter
+from .mot import MOTConverter
 from .wflw import WFLWConverter
 
 __all__ = [
@@ -181,5 +182,6 @@ __all__ = [
     'ADE20kImageTranslationConverter',
     'SalientObjectDetectionConverter',
     'CommonDetectionConverter',
+    'MOTConverter',
     'WFLWConverter',
 ]
