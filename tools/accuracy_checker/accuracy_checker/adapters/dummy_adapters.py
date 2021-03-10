@@ -18,6 +18,7 @@ from ..config import BoolField
 from ..representation import DetectionPrediction, ClassificationPrediction
 from ..adapters import Adapter
 
+# lol = 0
 
 class XML2DetectionAdapter(Adapter):
     """
@@ -77,6 +78,7 @@ class GVADetectionAdapter(Adapter):
 
     def configure(self):
         self.raw_detections = self.get_value_from_config('raw_detections')
+        self.lol = 0
 
     def process(self, raw, identifiers, frame_meta):
         results = []
@@ -96,6 +98,9 @@ class GVADetectionAdapter(Adapter):
                 y_mins.append(y_min)
                 x_maxs.append(x_max)
                 y_maxs.append(y_max)
+            if self.lol < 10:
+                print("dummy: {}".format((identifier, labels, scores, x_mins, y_mins, x_maxs, y_maxs)))
+                self.lol += 1
             results.append(DetectionPrediction(identifier, labels, scores, x_mins, y_mins, x_maxs, y_maxs))
 
         return results
