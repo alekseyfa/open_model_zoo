@@ -1,0 +1,31 @@
+models:
+  - name: pedestrian-detection-adas-0002
+
+    launchers:
+      - framework: dummy
+        loader: json
+        data_path: /home/alexeyfa/Repositories/video-analytics/gst-video-analytics/MOT-17-09-SDP_detect_only.json
+        provide_identifiers: true
+        adapter: gva_detection
+
+    datasets:
+      - name: pedestrian_detection_dataset
+        data_source: /home/alexeyfa/Repositories/video-analytics/datasets/MOT17/train/MOT17-09-SDP/img1
+        annotation_conversion:
+          converter: gva
+          json_file: /home/alexeyfa/Repositories/video-analytics/gst-video-analytics
+          has_background: True
+ 
+        metrics:
+          - type: map
+            integral: 11point
+            ignore_difficult: true
+            presenter: print_scalar
+          - name: AP@0.5
+            type: coco_precision
+            max_detections: 100
+            threshold: 0.5
+          - name: AP@0.5:0.05:95
+            type: coco_precision
+            max_detections: 100
+            threshold: '0.5:0.05:0.95'

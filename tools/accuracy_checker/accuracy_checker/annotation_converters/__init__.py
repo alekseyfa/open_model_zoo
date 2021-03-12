@@ -96,6 +96,7 @@ from .ade20k_image_translation import ADE20kImageTranslationConverter
 from .salient_object_detection import SalientObjectDetectionConverter
 from .common_object_detection import CommonDetectionConverter
 from .mot import MOTConverter
+from .gva_converter import GVAConverter
 from .wflw import WFLWConverter
 
 __all__ = [
@@ -183,5 +184,6 @@ __all__ = [
     'SalientObjectDetectionConverter',
     'CommonDetectionConverter',
     'MOTConverter',
+    'GVAConverter',
     'WFLWConverter',
 ]
