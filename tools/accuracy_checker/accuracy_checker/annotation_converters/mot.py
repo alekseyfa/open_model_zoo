@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import re
 from .format_converter import BaseFormatConverter, ConverterReturn
 from ..utils import read_txt, check_file_existence
 from ..config import PathField, BoolField
@@ -13,8 +14,7 @@ class MOTConverter(BaseFormatConverter):
     def parameters(cls):
         params = super().parameters()
         params.update({
-            'images_dir': PathField(optional=True, is_directory=True, description='Images directory'),
-            'annotation_file': PathField(optional=False, is_directory=True, description='Annotation file'),
+            'dataset_dir': PathField(optional=False, is_directory=True, description='Dataset directory'),
             'has_background': BoolField(optional=True, default=False, description='Indicator of background'),
             'add_background_to_label_id': BoolField(
                 optional=True, default=False, description='Indicator that need shift labels'
@@ -23,10 +23,10 @@ class MOTConverter(BaseFormatConverter):
         return params
 
     def configure(self):
-        self.images_dir = self.get_value_from_config('images_dir')
-        self.annotation_file = self.get_value_from_config('annotation_file')
+        self.dataset_dir = self.get_value_from_config('dataset_dir')
         self.has_background = self.get_value_from_config('has_background')
         self.shift_labels = self.get_value_from_config('add_background_to_label_id')
+        self.global_idx = 0
 
     def getImagePathById(self, image_id, prefix="", sufix=".jpg"):
         # "000257"
@@ -37,17 +37,39 @@ class MOTConverter(BaseFormatConverter):
         return image_path
 
     def convert(self, check_content=False, progress_callback=None, progress_interval=100, **kwargs):
+        annotation_files = list()
         content_errors = None if not check_content else []
         annotations = list()
+        for subdir, dirs, files in os.walk(self.dataset_dir):
+            for folder in dirs:
+                if folder.endswith('SDP'):
+                    annotation_path = os.path.join(subdir, folder, 'det', 'det.txt')
+                    annotation_files.append(annotation_path)
+                    # print("annotation_path: {}".format(annotation_path))
+                    # annotations.extend(self.parse_annotation(annotation_path))
+        
+        annotation_files.sort(key=lambda x:int(re.search(r'MOT17-(.*?)-SDP', x).group(1)))
+        annotation_files = self.remove_invalid_datasets(annotation_files)
+        print(annotation_files)
+        for annotation_file in annotation_files:
+            annotations.extend(self.parse_annotation(annotation_file))
+            # if progress_callback and idx % progress_interval == 0:
+            #     progress_callback(idx * 100 / num_iterations)
+
+        return ConverterReturn(annotations, self.generate_meta(), content_errors)
+
+    def parse_annotation(self, annotation_path: str) -> list:
+        frames = list()
         labels, x_mins, y_mins, x_maxs, y_maxs = [], [], [], [], []
-        annotation_list = read_txt(os.path.join(self.annotation_file, 'det.txt'))
+        annotation_list = read_txt(annotation_path)
         num_iterations = len(annotation_list)
-        current_img_id = annotation_list[0].split(',')[0]
+        current_img_id = self.global_idx + int(annotation_list[0].split(',')[0])
     #         content_errors.append('{}: does not exist'.format(self.images_dir / identifier))
         for idx, line in enumerate(annotation_list):
             img_id, _, x_min, y_min, width, height, _ = line.split(',')
+            img_id = self.global_idx + int(img_id)
             if current_img_id != img_id:
-                annotations.append(DetectionAnnotation(self.getImagePathById(current_img_id), np.array(
+                frames.append(DetectionAnnotation(self.getImagePathById(current_img_id), np.array(
                     labels), np.array(x_mins), np.array(y_mins), np.array(x_maxs), np.array(y_maxs)))
                 labels.clear()
                 x_mins.clear()
@@ -65,12 +87,11 @@ class MOTConverter(BaseFormatConverter):
                 x_maxs.append(float(x_max))
                 y_maxs.append(float(y_max))
 
-            if progress_callback and idx % progress_interval == 0:
-                progress_callback(idx * 100 / num_iterations)
-
-        annotations.append(DetectionAnnotation(self.getImagePathById(current_img_id), np.array(
+        frames.append(DetectionAnnotation(self.getImagePathById(current_img_id), np.array(
             labels), np.array(x_mins), np.array(y_mins), np.array(x_maxs), np.array(y_maxs)))
-        return ConverterReturn(annotations, self.generate_meta(), content_errors)
+        
+        self.global_idx = current_img_id
+        return frames
 
     def generate_meta(self):
         labels = ['object']
@@ -82,3 +103,7 @@ class MOTConverter(BaseFormatConverter):
             meta['label_map'][0] = 'background'
             meta['background_label'] = 0
         return meta
+
+    def remove_invalid_datasets(self, annotation_files: list):
+        annotation_files = list(filter(lambda x: re.search(r'MOT17-(.*?)-SDP', x).group(1) not in ['05', '06'], annotation_files))
+        return annotation_files
