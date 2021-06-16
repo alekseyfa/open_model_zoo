@@ -4,16 +4,16 @@ models:
     launchers:
       - framework: dummy
         loader: json
-        data_path: /home/alexeyfa/Repositories/video-analytics/gst-video-analytics/mot_17-05-06/MOT17-SDP_detect_only.json
+        data_path: /home/dsmertin/gva/tmp/mot_results/MOT17-SDP_detect_only.json
         provide_identifiers: true
         adapter: gva_detection
 
     datasets:
       - name: pedestrian_detection_dataset
-        data_source: /home/alexeyfa/Repositories/video-analytics/datasets/MOT17/train/MOT17-09-SDP/img1
+        data_source: /home/dsmertin/gva/data/datasets/MOT17/MOT17/train/MOT17-09-SDP/img1
         annotation_conversion:
           converter: mot
-          dataset_dir: /home/alexeyfa/Repositories/video-analytics/datasets/MOT17/
+          dataset_dir: /home/dsmertin/gva/data/datasets/MOT17/MOT17/
           has_background: True
  
         metrics:

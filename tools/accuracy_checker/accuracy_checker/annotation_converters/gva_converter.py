@@ -75,8 +75,7 @@ class GVAConverter(BaseFormatConverter):
             raise FileExistsError("The {} path to ground truth json file not found".format(file_path))
         target_parsed = list()
         with open(file_path, 'r') as gt_file:
-            for line in gt_file.readlines()[:-1]:
-                target_parsed.append(json.loads(line[:-2]))
+            target_parsed = json.load(gt_file)
 
         return target_parsed
 
